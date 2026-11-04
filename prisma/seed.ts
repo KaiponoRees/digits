@@ -25,7 +25,7 @@ async function main() {
   });
   for (const data of config.defaultData) {
     const condition = data.condition as Condition || Condition.good;
-    console.log(`  Adding stuff: ${JSON.stringify(data)}`);
+    console.log(`  Adding stuff: ${data.name} (${data.owner})`);
     await prisma.stuff.upsert({
       where: { id: config.defaultData.indexOf(data) + 1 },
       update: {},
@@ -37,6 +37,21 @@ async function main() {
       },
     });
   }
+  config.defaultContacts.forEach(async (contact, index) => {
+  console.log(`  Adding contact: ${contact.firstName} ${contact.lastName}`);
+  await prisma.contact.upsert({
+    where: { id: index + 1 },
+    update: {},
+    create: {
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      address: contact.address,
+      image: contact.image,
+      description: contact.description,
+      owner: contact.owner,
+    },
+  });
+});
 }
 main()
   .then(() => prisma.$disconnect())
@@ -45,3 +60,4 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
+  
