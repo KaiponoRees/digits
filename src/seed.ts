@@ -6,9 +6,11 @@ import * as config from '../config/settings.development.json';
 async function main() {
   console.log('Seeding the database');
   const password = await hash('changeme', 10);
-  config.defaultAccounts.forEach(async (account) => {
+
+  for (const account of config.defaultAccounts) {
     const role = account.role as Role || Role.USER;
     console.log(`  Creating user: ${account.email} with role: ${role}`);
+
     await prisma.user.upsert({
       where: { email: account.email },
       update: {},
@@ -18,12 +20,12 @@ async function main() {
         role,
       },
     });
-    // console.log(`  Created user: ${user.email} with role: ${user.role}`);
-  });
+  }
+
   for (const data of config.defaultData) {
     const condition = data.condition as Condition || Condition.good;
-    console.log(`  Adding stuff: ${JSON.stringify(data)}`);
-     
+    console.log(`  Adding stuff: ${data.name} (${data.owner})`);
+
     await prisma.stuff.upsert({
       where: { id: config.defaultData.indexOf(data) + 1 },
       update: {},
@@ -35,7 +37,29 @@ async function main() {
       },
     });
   }
+
+  await Promise.all(
+    config.defaultContacts.map(async (contact, index) => {
+      await prisma.contact.upsert({
+        where: { id: index + 1 },
+        update: {},
+        create: {
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          address: contact.address,
+          image: contact.image,
+          description: contact.description,
+          owner: contact.owner,
+        },
+      });
+    }),
+  );
+
+  config.defaultContacts.forEach((contact) => {
+    console.log(`  Adding contact: ${contact.firstName} ${contact.lastName}`);
+  });
 }
+
 main()
   .then(() => prisma.$disconnect())
   .catch(async (e) => {
